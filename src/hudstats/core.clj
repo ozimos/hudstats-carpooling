@@ -6,13 +6,14 @@
             [net.cgrand.enlive-html :as html]
             [reitit.ring.coercion :as rrc]
             [clj-http.client :as http]
+            [clojure.string :as str]
             [reitit.coercion.malli]
             [jsonista.core :as j]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.middleware.exception :as exception]
             [ring.adapter.jetty :as jetty]))
 
-(defn get-api-data [url]
+(defn get-base-data [url]
   (some-> (http/get url)
           :body
           (j/read-value j/keyword-keys-object-mapper)))
@@ -26,17 +27,37 @@
 
 (defn extract-links [results] (map :link results))
 
+(defn extract-key [v]
+  (-> v :content first :content first (str/replace ":" "")))
+
+(defn extract-val [v]
+  (-> v :content first))
+
+(defn seq->map [acc a]
+  (assoc acc (extract-key (first a)) (extract-val (second a))))
+
+(defn process-page [page-tree]
+  (map  (comp #(filter map? %)  :content) page-tree))
+
+(defn enhance-api [url]
+  (let [base-data (get-base-data url)
+        link-pages (doall (pmap (fn [{link :link}] (fetch-url link)) (:results base-data)))]
+    (map (fn [page] (->> (html/select page [:tr]) process-page (reduce seq->map {}))) link-pages)))
+
+(defn make-handler [url]
+  (fn [_]
+    {:status 200
+     :body  (get-base-data url)}))
+
+(def drivers-handler (make-handler drivers-url))
+(def passengers-handler (make-handler passengers-url))
+
 (def app
   (ring/ring-handler
    (ring/router
-    [["/drivers" {:get {:handler    (fn [_]
-                                      {:status 200
-                                       :body  (get-api-data drivers-url)})}}]
-     ["/passengers" {:get {:handler    (fn [_]
-                                         {:status 200
-                                          :body  (get-api-data passengers-url)})}}]]
-    {
-     :data {:coercion reitit.coercion.malli/coercion
+    [["/drivers" {:get {:handler  drivers-handler}}]
+     ["/passengers" {:get {:handler passengers-handler}}]]
+    {:data {:coercion reitit.coercion.malli/coercion
             :muuntaja   m/instance
             :middleware [[cors/wrap {:cors-config {:origins "*"}}]
                          muuntaja/format-negotiate-middleware
@@ -52,7 +73,6 @@
     server))
 
 (defn -main
-  "I don't do a whole lot ... yet."
   [& args]
   (start {}))
 
@@ -68,11 +88,13 @@
                      :body))
 
 
-  (slurp "http://www.samferda.net/en/detail/129568")
   (def html-tree (fetch-url "http://www.samferda.net/en/detail/129568"))
+  (def page-tree (html/select html-tree [:tr]))
+  (process-page page-tree)
   (map :content (html/select html-tree [:tr]))
-  {:tag :td, :attrs {:align "right"}, :content '({:tag :b, :attrs nil, :content ("Name:")})}
-  {:tag :td, :attrs nil, :content '("Luca")}
+  (def tr-first {:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["Name:"]}]})
+  (def tr-second {:tag :td, :attrs nil, :content ["Luca"]})
+  (-> tr-first :content first :content first (str/replace ":" ""))
   (map :link (:results
               api-response))
 

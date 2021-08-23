@@ -3,7 +3,7 @@
             [clj-http.fake :refer [with-fake-routes]]
             [jsonista.core :as j]
             [ring.mock.request :as mock]
-            [clojure.test :refer [deftest are]]))
+            [clojure.test :refer [deftest are is]]))
 
 
 (def driver-results {:results [{:date "2021-08-23"
@@ -37,6 +37,45 @@
                                    :from "Reykjaví­k"
                                    :link "http://www.samferda.net/en/detail/128188"
                                    :to "Landmannalaugar"}]})
+
+(def page-tree [{:tag :tr
+                 :attrs nil
+                 :content
+                 ["\n"
+                  {:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["Requesting:"]}]}
+                  "\n"
+                  {:tag :td, :attrs nil, :content ["Passengers"]}
+                  "\n"]}
+                {:tag :tr
+                 :attrs nil
+                 :content
+                 ["\n"
+                  {:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["From:"]}]}
+                  "\n"
+                  {:tag :td, :attrs nil, :content ["Keflaví­k"]}
+                  "\n"]}
+                {:tag :tr
+                 :attrs nil
+                 :content
+                 ["\n"
+                  {:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["To:"]}]}
+                  "\n"
+                  {:tag :td, :attrs nil, :content ["Selfoss"]}
+                  "\n"]}])
+
+(def processed-page [[{:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["Requesting:"]}]}
+           {:tag :td, :attrs nil, :content ["Passengers"]}]
+          [{:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["From:"]}]}
+           {:tag :td, :attrs nil, :content ["Keflaví­k"]}]
+          [{:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["To:"]}]}
+           {:tag :td, :attrs nil, :content ["Selfoss"]}]])
+
+(deftest process-page
+  (is (= processed-page
+         (hud/process-page page-tree))))
+
+(deftest aggregate
+  (is (= {"From" "Keflaví­k", "Requesting" "Passengers", "To" "Selfoss"} (reduce hud/seq->map {} processed-page))))
 
 (deftest server
   (with-fake-routes {hud/drivers-url (fn [_req] {:status 200 :headers {} :body (j/write-value-as-string driver-results)})
