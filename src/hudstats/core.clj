@@ -22,6 +22,8 @@
 
 (def passengers-url "http://apis.is/rides/samferda-passengers/")
 
+(def extra-keys ["Seats" "Name" "Phone" "Mobile" "E-mail" "Non-smoke car"])
+
 (defn fetch-url [url]
   (html/html-resource (java.net.URL. url)))
 
@@ -37,17 +39,19 @@
   (assoc acc (extract-key (first a)) (extract-val (second a))))
 
 (defn process-page [page-tree]
-  (map  (comp #(filter map? %)  :content) page-tree))
+  (as-> page-tree $ (map  (comp #(filter map? %)  :content) $)
+       (reduce seq->map {} $)
+       (select-keys $ extra-keys)))
 
 (defn enhance-api [url]
-  (let [base-data (get-base-data url)
-        link-pages (doall (pmap (fn [{link :link}] (fetch-url link)) (:results base-data)))]
-    (map (fn [page] (->> (html/select page [:tr]) process-page (reduce seq->map {}))) link-pages)))
+  (let [results (:results (get-base-data url))
+        link-pages (doall (pmap (fn [{link :link}] (fetch-url link)) results))]
+    (map-indexed (fn [index page] (->> (html/select page [:tr]) process-page (merge (nth results index)) )) link-pages)))
 
 (defn make-handler [url]
   (fn [_]
     {:status 200
-     :body  (get-base-data url)}))
+     :body  {:results (enhance-api url)}}))
 
 (def drivers-handler (make-handler drivers-url))
 (def passengers-handler (make-handler passengers-url))
@@ -78,30 +82,13 @@
 
 (comment
   (def server (start {}))
+  (.stop server)
   (require '[ring.mock.request :as mock])
   (require '[jsonista.core :as j])
   (def api-response (-> (http/get drivers-url)
                         :body
                         (j/read-value j/keyword-keys-object-mapper)))
 
-  (def html-resp (-> (http/get "http://www.samferda.net/en/detail/129568")
-                     :body))
-
-
-  (def html-tree (fetch-url "http://www.samferda.net/en/detail/129568"))
-  (def page-tree (html/select html-tree [:tr]))
-  (process-page page-tree)
-  (map :content (html/select html-tree [:tr]))
-  (def tr-first {:tag :td, :attrs {:align "right"}, :content [{:tag :b, :attrs nil, :content ["Name:"]}]})
-  (def tr-second {:tag :td, :attrs nil, :content ["Luca"]})
-  (-> tr-first :content first :content first (str/replace ":" ""))
-  (map :link (:results
-              api-response))
-
-
-  (-> (mock/request :get "/drivers")
-      app
-      (update :body (fn [v] (when v (j/read-value v j/keyword-keys-object-mapper)))))
 
   "")
 
