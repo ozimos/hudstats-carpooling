@@ -31,6 +31,7 @@
                                  "Name" "Tobias Ullrich"
                                  "Non-smoke car" "yes"
                                  "Phone" "+4915252805357"
+                                 "distance" "0km"
                                  "Seats" "1"}
                                 {"E-mail" "caitlinhpierce@gmail.com"
                                  "Mobile" nil
@@ -39,6 +40,7 @@
                                  "Phone" "+18306603231"
                                  "Seats" "1"
                                  "date" "2021-08-23"
+                                 "distance" "224km"
                                  "time" "flexible"
                                  "from" "Reykjaví­k"
                                  "link" link-url2
@@ -48,6 +50,7 @@
                                  "Name" "Charlene"
                                  "Non-smoke car" "no"
                                  "Phone" nil
+                                 "distance" "139km"
                                  "Seats" "2"
                                  "date" "2021-08-23"
                                  "time" "6:00"
@@ -61,6 +64,7 @@
                                     "to" "Selfoss"
                                     "date" "2021-08-23"
                                     "time" "00:00"
+                                    "distance" "49km"
                                     "E-mail" "Thevenerians@gmail.com "
                                     "Mobile" "+393400565207"
                                     "Name" "Luca"
@@ -73,6 +77,7 @@
                                     "to" "Reykjaví­k"
                                     "date" "2021-08-23"
                                     "time" "10:00"
+                                    "distance" "0km"
                                     "E-mail" "simona.baldino@gmail.com"
                                     "Mobile" "+393400565207"
                                     "Name" "Simona"
@@ -88,6 +93,7 @@
                                     "E-mail" "simona.baldino@gmail.com"
                                     "Mobile" "+393400565207"
                                     "Name" "Simona"
+                                    "distance" "49km"
                                     "Non-smoke car" "yes"
                                     "Phone" nil
                                     "Seats" "2"}]})

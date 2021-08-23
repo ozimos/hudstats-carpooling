@@ -8,6 +8,7 @@ http://docs.apis.is/#endpoint-rides which will show passengers and drivers along
                  [ring/ring-jetty-adapter "1.9.4"]
                  [clj-http "3.12.3"]
                  [zerg000000/simple-cors "0.0.8"]
+                 [factual/geo "3.0.1"]
                  [enlive "1.1.6"]]
   :main ^:skip-aot hudstats.core
   :target-path "target/%s"

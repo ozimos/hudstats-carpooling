@@ -6,6 +6,7 @@
             [net.cgrand.enlive-html :as html]
             [reitit.ring.coercion :as rrc]
             [clj-http.client :as http]
+            [hudstats.distance :refer [distance]]
             [clojure.string :as str]
             [reitit.coercion.malli]
             [jsonista.core :as j]
@@ -45,8 +46,9 @@
 
 (defn enhance-api [url]
   (let [results (:results (get-base-data url))
+        distances (map (fn [{:keys [from to]}]  (distance from to)) results)
         link-pages (doall (pmap (fn [{link :link}] (fetch-url link)) results))]
-    (map-indexed (fn [index page] (->> (html/select page [:tr]) process-page (merge (nth results index)) )) link-pages)))
+    (map-indexed (fn [index page] (->> (html/select page [:tr]) process-page (merge (nth results index) {:distance (nth distances index)}) )) link-pages)))
 
 (defn make-handler [url]
   (fn [_]
